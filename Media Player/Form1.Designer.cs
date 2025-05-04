@@ -35,6 +35,7 @@
             this.playButton = new System.Windows.Forms.Button();
             this.prevButton = new System.Windows.Forms.Button();
             this.playListPanel = new System.Windows.Forms.Panel();
+            this.addButton = new System.Windows.Forms.Button();
             this.playlistBox = new System.Windows.Forms.ListBox();
             this.playlistsLabel = new System.Windows.Forms.Label();
             this.deleteButton = new System.Windows.Forms.Button();
@@ -46,7 +47,6 @@
             this.duration = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.dataGridViewTextBoxColumn1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.songLabel = new System.Windows.Forms.Label();
-            this.addButton = new System.Windows.Forms.Button();
             this.controlPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.trackBar1)).BeginInit();
             this.playListPanel.SuspendLayout();
@@ -124,6 +124,15 @@
             this.playListPanel.Size = new System.Drawing.Size(167, 264);
             this.playListPanel.TabIndex = 1;
             // 
+            // addButton
+            // 
+            this.addButton.Location = new System.Drawing.Point(58, 63);
+            this.addButton.Name = "addButton";
+            this.addButton.Size = new System.Drawing.Size(49, 23);
+            this.addButton.TabIndex = 5;
+            this.addButton.Text = "Add";
+            this.addButton.UseVisualStyleBackColor = true;
+            // 
             // playlistBox
             // 
             this.playlistBox.FormattingEnabled = true;
@@ -132,6 +141,7 @@
             this.playlistBox.Name = "playlistBox";
             this.playlistBox.Size = new System.Drawing.Size(159, 169);
             this.playlistBox.TabIndex = 4;
+            this.playlistBox.DoubleClick += new System.EventHandler(this.playlistBox_DoubleClick);
             // 
             // playlistsLabel
             // 
@@ -218,15 +228,6 @@
             this.songLabel.TabIndex = 5;
             this.songLabel.Text = "Songs";
             this.songLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // addButton
-            // 
-            this.addButton.Location = new System.Drawing.Point(58, 63);
-            this.addButton.Name = "addButton";
-            this.addButton.Size = new System.Drawing.Size(49, 23);
-            this.addButton.TabIndex = 5;
-            this.addButton.Text = "Add";
-            this.addButton.UseVisualStyleBackColor = true;
             // 
             // Form1
             // 

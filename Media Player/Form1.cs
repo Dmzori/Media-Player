@@ -4,8 +4,6 @@ using System.ComponentModel;
 
 namespace Media_Player
 {
-
-    //what does this need
     //the song display is actually pretty good I just need to figure out how to programmatically create new rows for each song in a playlist
     //first i should just get the filedialog and creation of a single playlist
     //then get the master playlist to load up all my indivdual playlists
@@ -22,6 +20,8 @@ namespace Media_Player
         string projFolder, playlistFolder;
         BindingList<string> masterList = new BindingList<string>();
 
+
+        //constructor for the form
         public Form1()
         {
             InitializeComponent();
@@ -43,6 +43,8 @@ namespace Media_Player
             playlistBox.DataSource = masterList;
         }
 
+
+        //actionlistener for playbutton clicked
         private void playButton_Click(object sender, EventArgs e)
         {
             //right now just gives the address of an mp3 in the projects bin folder to the music player this needs to be done from the currently active playlist
@@ -57,6 +59,18 @@ namespace Media_Player
             songGrid[0,0].Value = title;
         }
 
+
+        //actionlistener for when an item in the listbox is double clicked this will load the current selected playlist into the data grid
+        private void playlistBox_DoubleClick(object sender, EventArgs e)
+        {
+            //make sure something is selected
+            if (playlistBox.SelectedIndex < 0) return;
+
+
+        }
+
+
+        //actionlistener for when newbutton is clicked creating a savedialog and a new playlist
         private void newButton_Click(object sender, EventArgs e)
         {
             string fName;
