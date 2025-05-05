@@ -1,6 +1,8 @@
 using WMPLib;
 using System.IO;
 using System.ComponentModel;
+using System.Diagnostics;
+using TagLib.Mpeg;
 
 namespace Media_Player
 {
@@ -19,6 +21,7 @@ namespace Media_Player
         //strings to be used for creating new playlists and adding them to the playlistbox
         string projFolder, playlistFolder;
         BindingList<string> masterList = new BindingList<string>();
+        List<string> addressList = new List<string>();
 
 
         //constructor for the form
@@ -39,8 +42,10 @@ namespace Media_Player
                 string fileName = Path.GetFileName(file);
                 //playlistBox.Items.Add(fileName);
                 masterList.Add(fileName);
+                addressList.Add(file);
             }
             playlistBox.DataSource = masterList;
+            songGrid.Rows.Clear();
         }
 
 
@@ -54,9 +59,9 @@ namespace Media_Player
             player.controls.play();
 
             //setting the songs title to the datagrid eventually this will set all the meta data such as length and artist 
-            var tfile = TagLib.File.Create(@player.URL);
+            var tfile = TagLib.File.Create("D:\\coding projects\\school projects\\c#\\Final\\Media Player\\Media Player\\bin\\Debug\\net7.0-windows\\04. I Am Above.mp3");
             string title = tfile.Tag.Title;
-            songGrid[0,0].Value = title;
+            songGrid[1,0].Value = title;
         }
 
 
@@ -65,8 +70,32 @@ namespace Media_Player
         {
             //make sure something is selected
             if (playlistBox.SelectedIndex < 0) return;
+            int inc = 0;
+            string path = addressList[playlistBox.SelectedIndex];
+            songGrid.Rows.Clear();
+            foreach (var line in System.IO.File.ReadLines(path))
+            {
+                
+                //adds a new row each time the loop runs
+                songGrid.Rows.Add();
 
+                //creating tfile object to get song meta deta and then adding them to the data grid cells
+                var tfile = TagLib.File.Create(line.Trim('"'));
+                songGrid[0, inc].Value = tfile.Tag.Title;
+                
+                //length is unreiable so its easier to use the duration property instead which is a TimeSpan
+                TimeSpan duration = tfile.Properties.Duration;
+                string minsSecs = $"{duration.Minutes:D2}:{duration.Seconds:D2}";
+                songGrid[1, inc].Value = minsSecs;
+                songGrid[2, inc].Value = tfile.Tag.FirstArtist;
+                inc++;
+            }
 
+        }
+
+        private void addButton_Click(object sender, EventArgs e)
+        {
+            //adds song to a playlist ie file dialog to select an mp3 then get the mp3 full path and add it to a new line in the selected playlist 
         }
 
 
@@ -87,7 +116,7 @@ namespace Media_Player
                 if (dlg.ShowDialog() == DialogResult.OK)
                 {
                     string path = dlg.FileName;
-                    File.Create(path);
+                    System.IO.File.Create(path);
                     fName = Path.GetFileName(dlg.FileName);
                     //playlistBox.Items.Add(fName);
                     masterList.Add(fName);
