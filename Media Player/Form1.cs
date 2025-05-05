@@ -1,18 +1,21 @@
 using WMPLib;
 using System.IO;
 using System.ComponentModel;
-using System.Diagnostics;
 using TagLib.Mpeg;
 
 namespace Media_Player
 {
-    //the song display is actually pretty good I just need to figure out how to programmatically create new rows for each song in a playlist
-    //first i should just get the filedialog and creation of a single playlist
-    //then get the master playlist to load up all my indivdual playlists
-    //that should be basic functionality
-    //then its forward/backward creating/edit playlists and adding removing songs
-    //then its right click menu polymorphism
-    //get album art with Taglib.Picture somehow then load that into a picture form component
+    //whats left to do
+    //play button
+    //delete button to remove song from a playlist dump the contents of the playlist file into a list then delete the correct index from the list then resave it to the playlist
+    //forward/backward button
+    //volume/tracker bar
+    //double click songs this can just fire play 
+    //right click playlist
+    //right click songs
+    //use album artork
+    //alternate play modes ie shuffle implemented in a polymorphic design pattern
+    //move repeated code segements out to seperate functions ie updating datagrid 
     public partial class Form1 : Form
     {
         //creating a windows media player object which is used to play music later on the play button action listener
@@ -21,7 +24,7 @@ namespace Media_Player
         //strings to be used for creating new playlists and adding them to the playlistbox
         string projFolder, playlistFolder;
         BindingList<string> masterList = new BindingList<string>();
-        List<string> addressList = new List<string>();
+        BindingList<string> addressList = new BindingList<string>();
 
 
         //constructor for the form
@@ -49,6 +52,34 @@ namespace Media_Player
         }
 
 
+        private void gridUpdate(string curPlayList)
+        {
+            string line;
+            int inc = 0;
+            songGrid.Rows.Clear();
+            using (var fs = new FileStream(curPlayList, FileMode.Open, FileAccess.Read, FileShare.None))
+            {
+                using var reader = new StreamReader(fs);
+                while ((line = reader.ReadLine()) != null)
+                {
+
+                    //adds a new row each time the loop runs
+                    songGrid.Rows.Add();
+
+                    //creating tfile object to get song meta deta and then adding them to the data grid cells
+                    var tfile = TagLib.File.Create(line.Trim('"'));
+                    songGrid[0, inc].Value = tfile.Tag.Title;
+
+                    //length is unreiable so its easier to use the duration property instead which is a TimeSpan
+                    TimeSpan duration = tfile.Properties.Duration;
+                    string minsSecs = $"{duration.Minutes:D2}:{duration.Seconds:D2}";
+                    songGrid[1, inc].Value = minsSecs;
+                    songGrid[2, inc].Value = tfile.Tag.FirstArtist;
+                    inc++;
+                }
+            }
+        }
+
         //actionlistener for playbutton clicked
         private void playButton_Click(object sender, EventArgs e)
         {
@@ -71,31 +102,33 @@ namespace Media_Player
             //make sure something is selected
             if (playlistBox.SelectedIndex < 0) return;
             int inc = 0;
-            string path = addressList[playlistBox.SelectedIndex];
-            songGrid.Rows.Clear();
-            foreach (var line in System.IO.File.ReadLines(path))
-            {
-                
-                //adds a new row each time the loop runs
-                songGrid.Rows.Add();
-
-                //creating tfile object to get song meta deta and then adding them to the data grid cells
-                var tfile = TagLib.File.Create(line.Trim('"'));
-                songGrid[0, inc].Value = tfile.Tag.Title;
-                
-                //length is unreiable so its easier to use the duration property instead which is a TimeSpan
-                TimeSpan duration = tfile.Properties.Duration;
-                string minsSecs = $"{duration.Minutes:D2}:{duration.Seconds:D2}";
-                songGrid[1, inc].Value = minsSecs;
-                songGrid[2, inc].Value = tfile.Tag.FirstArtist;
-                inc++;
-            }
-
+            string line;
+            //int selected = playlistBox.SelectedIndex;
+            string curPlayList = addressList[playlistBox.SelectedIndex];
+            gridUpdate(curPlayList);
         }
 
         private void addButton_Click(object sender, EventArgs e)
         {
             //adds song to a playlist ie file dialog to select an mp3 then get the mp3 full path and add it to a new line in the selected playlist 
+            if (playlistBox.SelectedIndex < 0) return;
+            string curPlayList = addressList[playlistBox.SelectedIndex];
+            using (var dlg = new OpenFileDialog())
+            {
+                dlg.Title = "Select an MP3 File";
+                dlg.Filter = "MP3 Files (*.mp3)|*.mp3|All Files (*.*)|*.*";
+                dlg.DefaultExt = "mp3";
+                dlg.AddExtension = true;
+                dlg.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
+
+                if (dlg.ShowDialog() == DialogResult.OK) 
+                {
+                    string mp3Path = dlg.FileName;
+                    System.IO.File.AppendAllText(curPlayList, mp3Path + Environment.NewLine);
+                    gridUpdate(curPlayList);
+                }
+            }
+            
         }
 
 
@@ -116,10 +149,11 @@ namespace Media_Player
                 if (dlg.ShowDialog() == DialogResult.OK)
                 {
                     string path = dlg.FileName;
-                    System.IO.File.Create(path);
+                    System.IO.File.Create(path).Dispose();
                     fName = Path.GetFileName(dlg.FileName);
                     //playlistBox.Items.Add(fName);
                     masterList.Add(fName);
+                    addressList.Add(path);
                 }
             }
         }
