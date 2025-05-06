@@ -2,29 +2,30 @@ using WMPLib;
 using System.IO;
 using System.ComponentModel;
 using TagLib.Mpeg;
+using System.Windows.Forms;
 
 namespace Media_Player
 {
     //whats left to do
-    //play button
     //delete button to remove song from a playlist dump the contents of the playlist file into a list then delete the correct index from the list then resave it to the playlist
-    //forward/backward button
     //volume/tracker bar
     //double click songs this can just fire play 
     //right click playlist
     //right click songs
     //use album artork
     //alternate play modes ie shuffle implemented in a polymorphic design pattern
-    //move repeated code segements out to seperate functions ie updating datagrid 
     public partial class Form1 : Form
     {
         //creating a windows media player object which is used to play music later on the play button action listener
-        WMPLib.WindowsMediaPlayer player = new WMPLib.WindowsMediaPlayer();
+        WMPLib.WindowsMediaPlayer player;
 
         //strings to be used for creating new playlists and adding them to the playlistbox
         string projFolder, playlistFolder;
         BindingList<string> masterList = new BindingList<string>();
         BindingList<string> addressList = new BindingList<string>();
+        bool playListLoaded = false;
+        //List<string> curSongs = new List<string>();
+        int curIndex;
 
 
         //constructor for the form
@@ -43,20 +44,64 @@ namespace Media_Player
             foreach (var file in playLists)
             {
                 string fileName = Path.GetFileName(file);
-                //playlistBox.Items.Add(fileName);
                 masterList.Add(fileName);
                 addressList.Add(file);
             }
             playlistBox.DataSource = masterList;
             songGrid.Rows.Clear();
+            player = new WMPLib.WindowsMediaPlayer();
+            //player.PlayStateChange += Player_PlayStateChange;
         }
 
 
+        //function to load mediaplayer playlist for the purpose of controlls
+        private void loadPlaylist(string playListPath, int startIndex)
+        {
+            if (playListLoaded) return;
+
+            var curSongs = System.IO.File
+             .ReadAllLines(playListPath)
+             .Where(l => !string.IsNullOrWhiteSpace(l))
+             .ToList();
+
+            IWMPPlaylist tempPlayList = player.playlistCollection.newPlaylist("temp");
+            for (int i = startIndex; i < curSongs.Count; i++)
+            {
+                tempPlayList.appendItem(player.newMedia(curSongs[i]));
+            }
+
+            player.currentPlaylist = tempPlayList;
+            player.controls.currentItem = tempPlayList.Item[startIndex];
+            playListLoaded = true;
+        }
+        //checking state of media player
+        /*private void Player_PlayStateChange(int newState)
+        {
+            var state = (WMPPlayState)newState;
+            MessageBox.Show($"State: {state}");
+            if ((WMPPlayState)newState == WMPPlayState.wmppsMediaEnded || (WMPPlayState)newState == WMPPlayState.wmppsStopped || state == WMPPlayState.wmppsReady)
+            {
+                curIndex++;
+                if (curIndex < curSongs.Count)
+                {
+                    player.URL = curSongs[curIndex];
+                    player.controls.play();
+                }
+            }
+        }*/
+
+
+        //function that updates the data grid compartmentalized for ease of reuse
         private void gridUpdate(string curPlayList)
         {
+            //declaring line to hold each song path and a counter to be used in adding the correct meta data to each cell
             string line;
             int inc = 0;
+            
+            //pre clearing the datagrid so we dont overlap playlist contents
             songGrid.Rows.Clear();
+            
+            //opening the playlist file so it can be iterated over and the songs can be added with their meta data to the datagrid
             using (var fs = new FileStream(curPlayList, FileMode.Open, FileAccess.Read, FileShare.None))
             {
                 using var reader = new StreamReader(fs);
@@ -78,21 +123,67 @@ namespace Media_Player
                     inc++;
                 }
             }
+            playListLoaded = false;
         }
 
         //actionlistener for playbutton clicked
         private void playButton_Click(object sender, EventArgs e)
         {
-            //right now just gives the address of an mp3 in the projects bin folder to the music player this needs to be done from the currently active playlist
-            player.URL = "04. I Am Above.mp3";
-            
-            //plays the previously passed song no error checking yet
-            player.controls.play();
+            //i need to check if player is playing 
+            //if the currently selectd song is playing pause
+            //if a different song is playing play the new song
 
-            //setting the songs title to the datagrid eventually this will set all the meta data such as length and artist 
-            var tfile = TagLib.File.Create("D:\\coding projects\\school projects\\c#\\Final\\Media Player\\Media Player\\bin\\Debug\\net7.0-windows\\04. I Am Above.mp3");
-            string title = tfile.Tag.Title;
-            songGrid[1,0].Value = title;
+
+            int selection = songGrid.CurrentCell.RowIndex;
+            //string line;
+            //List<string> curSongs = new List<string>();
+            string curPlayList = addressList[playlistBox.SelectedIndex];
+
+            /*using (var fs = new FileStream(curPlayList, FileMode.Open, FileAccess.Read, FileShare.None))
+            {
+                using var reader = new StreamReader(fs);
+                while ((line = reader.ReadLine()) != null)
+                {
+                    if (string.IsNullOrEmpty(line)) continue;
+                    curSongs.Add(line);
+                }
+            }
+
+            var curSongs = System.IO.File
+             .ReadAllLines(curPlayList)
+             .Where(l => !string.IsNullOrWhiteSpace(l))
+             .ToList();
+
+            IWMPPlaylist tempPlayList = player.playlistCollection.newPlaylist("temp");
+            for (int i = selection; i < curSongs.Count; i++)
+            {
+                tempPlayList.appendItem(player.newMedia(curSongs[i]));
+            }
+            /*if (player.playState == WMPPlayState.wmppsPlaying && selection == curIndex)
+            {
+                player.controls.pause();
+                return;
+            }
+            player.currentPlaylist = tempPlayList;*/
+            loadPlaylist(curPlayList,selection);
+            if (player.playState == WMPPlayState.wmppsPlaying)
+            {
+                player.controls.pause();
+            }
+            else
+            {
+                player.controls.play();
+            }
+            
+            //curIndex = selection;
+            //player.URL = curSongs[curIndex];
+            //player.controls.play();
+            /*(for (int i = curInd; i < curSongs.Count; i++)
+            {
+                player.URL = curSongs[i];
+                player.controls.play();
+            }*/
+            //do this in a for loop to play the entire play list 
         }
 
 
@@ -129,6 +220,18 @@ namespace Media_Player
                 }
             }
             
+        }
+
+        private void forwardButton_Click(object sender, EventArgs e)
+        {
+            if(player.controls.isAvailable["next"])
+                player.controls.next();
+        }
+
+        private void prevButton_Click(object sender, EventArgs e)
+        {
+            if (player.controls.isAvailable["previous"])
+                player.controls.previous();
         }
 
 

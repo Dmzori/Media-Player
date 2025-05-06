@@ -91,6 +91,7 @@
             this.forwardButton.TabIndex = 2;
             this.forwardButton.Text = ">>";
             this.forwardButton.UseVisualStyleBackColor = true;
+            this.forwardButton.Click += new System.EventHandler(this.forwardButton_Click);
             // 
             // playButton
             // 
@@ -110,6 +111,7 @@
             this.prevButton.TabIndex = 0;
             this.prevButton.Text = "<<";
             this.prevButton.UseVisualStyleBackColor = true;
+            this.prevButton.Click += new System.EventHandler(this.prevButton_Click);
             // 
             // playListPanel
             // 
