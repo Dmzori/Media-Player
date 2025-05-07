@@ -28,13 +28,15 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.controlPanel = new System.Windows.Forms.Panel();
             this.controlLabel = new System.Windows.Forms.Label();
-            this.trackBar1 = new System.Windows.Forms.TrackBar();
+            this.volBar = new System.Windows.Forms.TrackBar();
             this.forwardButton = new System.Windows.Forms.Button();
             this.playButton = new System.Windows.Forms.Button();
             this.prevButton = new System.Windows.Forms.Button();
             this.playListPanel = new System.Windows.Forms.Panel();
+            this.picBox = new System.Windows.Forms.PictureBox();
             this.addButton = new System.Windows.Forms.Button();
             this.playlistBox = new System.Windows.Forms.ListBox();
             this.playlistsLabel = new System.Windows.Forms.Label();
@@ -47,17 +49,21 @@
             this.duration = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.dataGridViewTextBoxColumn1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.songLabel = new System.Windows.Forms.Label();
+            this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.rightMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.controlPanel.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.trackBar1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.volBar)).BeginInit();
             this.playListPanel.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.picBox)).BeginInit();
             this.dataPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.songGrid)).BeginInit();
+            this.contextMenuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
             // controlPanel
             // 
             this.controlPanel.Controls.Add(this.controlLabel);
-            this.controlPanel.Controls.Add(this.trackBar1);
+            this.controlPanel.Controls.Add(this.volBar);
             this.controlPanel.Controls.Add(this.forwardButton);
             this.controlPanel.Controls.Add(this.playButton);
             this.controlPanel.Controls.Add(this.prevButton);
@@ -76,12 +82,13 @@
             this.controlLabel.Text = "Controls";
             this.controlLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // trackBar1
+            // volBar
             // 
-            this.trackBar1.Location = new System.Drawing.Point(167, 12);
-            this.trackBar1.Name = "trackBar1";
-            this.trackBar1.Size = new System.Drawing.Size(176, 45);
-            this.trackBar1.TabIndex = 3;
+            this.volBar.Location = new System.Drawing.Point(167, 12);
+            this.volBar.Name = "volBar";
+            this.volBar.Size = new System.Drawing.Size(176, 45);
+            this.volBar.TabIndex = 3;
+            this.volBar.Scroll += new System.EventHandler(this.volBar_Scroll);
             // 
             // forwardButton
             // 
@@ -115,6 +122,7 @@
             // 
             // playListPanel
             // 
+            this.playListPanel.Controls.Add(this.picBox);
             this.playListPanel.Controls.Add(this.addButton);
             this.playListPanel.Controls.Add(this.playlistBox);
             this.playListPanel.Controls.Add(this.playlistsLabel);
@@ -125,6 +133,15 @@
             this.playListPanel.Name = "playListPanel";
             this.playListPanel.Size = new System.Drawing.Size(167, 264);
             this.playListPanel.TabIndex = 1;
+            // 
+            // picBox
+            // 
+            this.picBox.Location = new System.Drawing.Point(5, 160);
+            this.picBox.Name = "picBox";
+            this.picBox.Size = new System.Drawing.Size(157, 98);
+            this.picBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.picBox.TabIndex = 6;
+            this.picBox.TabStop = false;
             // 
             // addButton
             // 
@@ -142,7 +159,7 @@
             this.playlistBox.ItemHeight = 15;
             this.playlistBox.Location = new System.Drawing.Point(3, 90);
             this.playlistBox.Name = "playlistBox";
-            this.playlistBox.Size = new System.Drawing.Size(159, 169);
+            this.playlistBox.Size = new System.Drawing.Size(159, 64);
             this.playlistBox.TabIndex = 4;
             this.playlistBox.DoubleClick += new System.EventHandler(this.playlistBox_DoubleClick);
             // 
@@ -164,6 +181,7 @@
             this.deleteButton.TabIndex = 2;
             this.deleteButton.Text = "Delete";
             this.deleteButton.UseVisualStyleBackColor = true;
+            this.deleteButton.Click += new System.EventHandler(this.deleteButton_Click);
             // 
             // loadButton
             // 
@@ -206,6 +224,9 @@
             this.songGrid.RowTemplate.Height = 25;
             this.songGrid.Size = new System.Drawing.Size(342, 155);
             this.songGrid.TabIndex = 6;
+            this.songGrid.CellContentDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.songGrid_CellContentDoubleClick);
+            this.songGrid.CellMouseClick += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.songGrid_CellMouseClick);
+            this.songGrid.CellMouseDown += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.songGrid_CellMouseDown);
             // 
             // songColumn
             // 
@@ -232,6 +253,19 @@
             this.songLabel.Text = "Songs";
             this.songLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
+            // contextMenuStrip1
+            // 
+            this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.rightMenu});
+            this.contextMenuStrip1.Name = "contextMenuStrip1";
+            this.contextMenuStrip1.Size = new System.Drawing.Size(97, 26);
+            // 
+            // rightMenu
+            // 
+            this.rightMenu.Name = "rightMenu";
+            this.rightMenu.Size = new System.Drawing.Size(96, 22);
+            this.rightMenu.Text = "play";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -244,10 +278,12 @@
             this.Text = "Form1";
             this.controlPanel.ResumeLayout(false);
             this.controlPanel.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.trackBar1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.volBar)).EndInit();
             this.playListPanel.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.picBox)).EndInit();
             this.dataPanel.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.songGrid)).EndInit();
+            this.contextMenuStrip1.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -256,7 +292,7 @@
 
         private Panel controlPanel;
         private Label controlLabel;
-        private TrackBar trackBar1;
+        private TrackBar volBar;
         private Button forwardButton;
         private Button playButton;
         private Button prevButton;
@@ -273,5 +309,8 @@
         private DataGridViewTextBoxColumn duration;
         private DataGridViewTextBoxColumn dataGridViewTextBoxColumn1;
         private Button addButton;
+        private ContextMenuStrip contextMenuStrip1;
+        private ToolStripMenuItem rightMenu;
+        private PictureBox picBox;
     }
 }
