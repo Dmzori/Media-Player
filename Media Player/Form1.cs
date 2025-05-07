@@ -77,19 +77,8 @@ namespace Media_Player
             cmbMode.Items.Add("Sequential");
             cmbMode.Items.Add("Repeat One");
             cmbMode.SelectedIndex = 0;   // default
-            //subscribing to the combo box index change and creating a switch statement to enable the polymorphic playback switching
-            /*cmbMode.SelectedIndexChanged += (s, e) =>
-            {
-                switch ((string)cmbMode.SelectedItem)
-                {
-                    case "Repeat One":
-                        playMode = new RepeatOneMode();
-                        break;
-                    default:
-                        playMode = new SequentialMode();
-                        break;
-                }
-            };*/
+           
+            //subscribing to the combo box index change
             cmbMode.SelectedIndexChanged += CmbMode_SelectedIndexChanged;
         }
 
