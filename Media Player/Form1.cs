@@ -127,13 +127,21 @@ namespace Media_Player
                 using var reader = new StreamReader(fs);
                 while ((line = reader.ReadLine()) != null)
                 {
-
+                    TagLib.File tfile = null;
                     //adds a new row each time the loop runs
                     songGrid.Rows.Add();
 
                     //creating tfile object to get song meta deta and then adding them to the data grid cells
-                    var tfile = TagLib.File.Create(line.Trim('"'));
-                    songGrid[0, inc].Value = tfile.Tag.Title;
+                    try
+                    {
+                        tfile = TagLib.File.Create(line.Trim('"'));
+                    }catch(Exception e)
+                    {
+                        MessageBox.Show("invalid file in your playlist please make a new one or clear the old one");
+
+                        continue;
+                    }
+                        songGrid[0, inc].Value = tfile.Tag.Title;
 
                     //length is unreiable so its easier to use the duration property instead which is a TimeSpan
                     TimeSpan duration = tfile.Properties.Duration;
@@ -309,19 +317,41 @@ namespace Media_Player
             int selection = e.RowIndex;
             string curPlayList = addressList[playlistBox.SelectedIndex];
             if (selection < 0 || songGrid.CurrentRow == null) return;
+            
             //adding songs from current playlist to a list 
             var curSongs = System.IO.File
              .ReadAllLines(curPlayList)
              .Where(l => !string.IsNullOrWhiteSpace(l))
              .ToList();
             if (selection >= curSongs.Count) return;
+            
             //getting the songpath from the playlist file
             string songPath = curSongs[selection];
-            
-            //creating a taglib object to get the album pictures from
-            var tfile = TagLib.File.Create(songPath.Trim('"'));
+
+            //checking the extension
+            if (Path.GetExtension(songPath).ToLowerInvariant() != ".mp3")
+            {
+                picBox.Image?.Dispose();
+                picBox.Image = null;
+                return;
+            }
+
+            //creating taglib file and checking its being passed a valid url from the playlist
+            TagLib.File tfile;
+            try
+            {
+                //creating a taglib object to get the album pictures from
+                tfile = TagLib.File.Create(songPath.Trim('"'));
+            }catch(Exception ex) 
+            {
+                MessageBox.Show("invalid file in your playlist please make a new one or clear the old one");
+                picBox.Image?.Dispose();
+                picBox.Image = null;
+                return;
+            }
+
+            //pulling the artwork if a valid path is given to the tfile
             var pics = tfile.Tag.Pictures;
-            
             //making sure there was picture meta data in the mp3
             if(pics != null && pics.Length > 0) 
             {
