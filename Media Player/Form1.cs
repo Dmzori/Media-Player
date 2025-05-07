@@ -263,19 +263,17 @@ namespace Media_Player
         //on left click of a row in songGrid function will load the album art into picBox
         private void songGrid_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
         {
-            //making sure theres a row slected in the songGrid
-            if (songGrid.CurrentRow == null) return;
             
             //getting current selections 
-            int selection = songGrid.CurrentCell.RowIndex;
+            int selection = e.RowIndex;
             string curPlayList = addressList[playlistBox.SelectedIndex];
-            
+            if (selection < 0 || songGrid.CurrentRow == null) return;
             //adding songs from current playlist to a list 
             var curSongs = System.IO.File
              .ReadAllLines(curPlayList)
              .Where(l => !string.IsNullOrWhiteSpace(l))
              .ToList();
-            
+            if (selection >= curSongs.Count) return;
             //getting the songpath from the playlist file
             string songPath = curSongs[selection];
             
