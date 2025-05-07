@@ -1,0 +1,16 @@
+How it works
+%%playlist stuff%%
+new button creates a new playlist
+double click a playlist in the listbox or press the load button to select it
+add button will add a selected mp3 file to the current playlist
+delete button will delete a selected mp3 file from the current playlist
+
+%%controlls stuff%%
+play button will play whatever is currently playing or pause if nothing/something else is selected
+double clicking a song in the data grid will play whatever you clicked no matter what is playing
+forward button will repeat the currently playing song if repeat playback is selected otherwise it will play through and loop around to the start of the playlist
+previous button does the same but in reverse
+the track bar will adjust the players volume
+right clicking a song will bring up a context menu that has a play option it functions like the play button
+left clicking a song in the data grid will atempt to bring up its related album artwork in the picture box below the playlist box
+selecting a different option in the combo box will change the playback mode

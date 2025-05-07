@@ -30,7 +30,7 @@
         {
             this.components = new System.ComponentModel.Container();
             this.controlPanel = new System.Windows.Forms.Panel();
-            this.controlLabel = new System.Windows.Forms.Label();
+            this.cmbMode = new System.Windows.Forms.ComboBox();
             this.volBar = new System.Windows.Forms.TrackBar();
             this.forwardButton = new System.Windows.Forms.Button();
             this.playButton = new System.Windows.Forms.Button();
@@ -62,7 +62,7 @@
             // 
             // controlPanel
             // 
-            this.controlPanel.Controls.Add(this.controlLabel);
+            this.controlPanel.Controls.Add(this.cmbMode);
             this.controlPanel.Controls.Add(this.volBar);
             this.controlPanel.Controls.Add(this.forwardButton);
             this.controlPanel.Controls.Add(this.playButton);
@@ -72,15 +72,13 @@
             this.controlPanel.Size = new System.Drawing.Size(346, 61);
             this.controlPanel.TabIndex = 0;
             // 
-            // controlLabel
+            // cmbMode
             // 
-            this.controlLabel.Font = new System.Drawing.Font("Segoe UI", 15F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.controlLabel.Location = new System.Drawing.Point(41, 5);
-            this.controlLabel.Name = "controlLabel";
-            this.controlLabel.Size = new System.Drawing.Size(100, 23);
-            this.controlLabel.TabIndex = 4;
-            this.controlLabel.Text = "Controls";
-            this.controlLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.cmbMode.FormattingEnabled = true;
+            this.cmbMode.Location = new System.Drawing.Point(34, 7);
+            this.cmbMode.Name = "cmbMode";
+            this.cmbMode.Size = new System.Drawing.Size(121, 23);
+            this.cmbMode.TabIndex = 4;
             // 
             // volBar
             // 
@@ -191,6 +189,7 @@
             this.loadButton.TabIndex = 1;
             this.loadButton.Text = "Load";
             this.loadButton.UseVisualStyleBackColor = true;
+            this.loadButton.Click += new System.EventHandler(this.loadButton_Click);
             // 
             // newButton
             // 
@@ -291,7 +290,6 @@
         #endregion
 
         private Panel controlPanel;
-        private Label controlLabel;
         private TrackBar volBar;
         private Button forwardButton;
         private Button playButton;
@@ -312,5 +310,6 @@
         private ContextMenuStrip contextMenuStrip1;
         private ToolStripMenuItem rightMenu;
         private PictureBox picBox;
+        private ComboBox cmbMode;
     }
 }

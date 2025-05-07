@@ -1,18 +1,18 @@
-using WMPLib;
+﻿using WMPLib;
 using System.IO;
 using System.ComponentModel;
 using TagLib.Mpeg;
 using System.Windows.Forms;
-using static System.Windows.Forms.AxHost;
 
 namespace Media_Player
 {
-    //whats left to do
-    //alternate play modes ie shuffle implemented in a polymorphic design pattern
     public partial class Form1 : Form
     {
         //creating a windows media player object which is used to play music later on the play button action listener
         WMPLib.WindowsMediaPlayer player;
+        
+        //creating a playbackmode object for the playback mode functionality 
+        private IPlaybackMode playMode;
 
         //strings to be used for creating new playlists and adding them to the playlistbox
         //lists for working with the playlists and songs in the playlists
@@ -29,7 +29,9 @@ namespace Media_Player
         public Form1()
         {
             InitializeComponent();
-
+            //instantiating the play mode object
+            playMode = new SequentialMode();
+            
             //creating the primary playlist folder if it doesnt already exist
             projFolder = Path.GetDirectoryName(Application.ExecutablePath);
             playlistFolder = Path.Combine(projFolder, "playlists");
@@ -44,32 +46,51 @@ namespace Media_Player
 
                 //masterlist is the data source for the list box and has the cleaned names of each playlist 
                 masterList.Add(fileName);
-                
+
                 //address list holds the paths of each playlist so the rest of the program can find them easily
                 addressList.Add(file);
             }
 
             //sets the listbox datasource
             playlistBox.DataSource = masterList;
-            
+
             //making sure the datagrid is clear of old stuff from other playlists
             songGrid.Rows.Clear();
 
             //instantiating the media player
             player = new WMPLib.WindowsMediaPlayer();
-            
+
             //setting up the volume slider
             volBar.Minimum = 0;
             volBar.Maximum = 100;
             volBar.TickFrequency = 5;
             volBar.Value = player.settings.volume;
-            
+
             //setting up the functionality for the context menu and subscribing to the right click function
             songGrid.ContextMenuStrip = contextMenuStrip1;
             rightMenu.Click += playToolStripMenuItem_Click;
-            
+
             //setting the songGrid so that users cant change the data in each cell
             songGrid.ReadOnly = true;
+
+            //setting up the combo box by adding in the options and the default
+            cmbMode.Items.Add("Sequential");
+            cmbMode.Items.Add("Repeat One");
+            cmbMode.SelectedIndex = 0;   // default
+            //subscribing to the combo box index change and creating a switch statement to enable the polymorphic playback switching
+            /*cmbMode.SelectedIndexChanged += (s, e) =>
+            {
+                switch ((string)cmbMode.SelectedItem)
+                {
+                    case "Repeat One":
+                        playMode = new RepeatOneMode();
+                        break;
+                    default:
+                        playMode = new SequentialMode();
+                        break;
+                }
+            };*/
+            cmbMode.SelectedIndexChanged += CmbMode_SelectedIndexChanged;
         }
 
 
@@ -88,7 +109,7 @@ namespace Media_Player
 
             //creating the mediaplayer playlist object for the purpose of actually playing the songs then adding the songs to the playlist
             IWMPPlaylist tempPlayList = player.playlistCollection.newPlaylist("temp");//consider changing temp so the playlists have unique names maybe get it so that 
-            for (int i = startIndex; i < curSongs.Count; i++)
+            for (int i = 0; i < curSongs.Count; i++)
             {
                 tempPlayList.appendItem(player.newMedia(curSongs[i]));
             }
@@ -96,21 +117,21 @@ namespace Media_Player
             //setting the mediaplayer playlist to the temp list and the currently selected song to the one selected in songGrid
             player.currentPlaylist = tempPlayList;
             //MessageBox.Show($"idnex: {startIndex}");
-            player.controls.currentItem = tempPlayList.Item[0];
+            player.controls.currentItem = tempPlayList.Item[startIndex];
             playListLoaded = true;
         }
 
-        
+
         //function that updates the data grid compartmentalized for ease of reuse
         private void gridUpdate(string curPlayList)
         {
             //declaring line to hold each song path and a counter to be used in adding the correct meta data to each cell
             string line;
             int inc = 0;
-            
+
             //pre clearing the datagrid so we dont overlap playlist contents
             songGrid.Rows.Clear();
-            
+
             //opening the playlist file so it can be iterated over and the songs can be added with their meta data to the datagrid
             using (var fs = new FileStream(curPlayList, FileMode.Open, FileAccess.Read, FileShare.None))
             {
@@ -145,7 +166,7 @@ namespace Media_Player
             string curPlayList = addressList[playlistBox.SelectedIndex];
 
             //calling the loadPlayList function 
-            loadPlaylist(curPlayList,selection);
+            loadPlaylist(curPlayList, selection);
 
             //control logic acting as a pause/play button in the case a song is actively playing it will pause on press
             if (player.playState == WMPPlayState.wmppsPlaying)
@@ -167,7 +188,16 @@ namespace Media_Player
 
             //getting the currently selected playlist
             string curPlayList = addressList[playlistBox.SelectedIndex];
-            
+            var curSongs = System.IO.File
+             .ReadAllLines(curPlayList)
+             .Where(l => !string.IsNullOrWhiteSpace(l))
+             .ToList();
+
+            //creates the windows media player playlist so that music can be played
+            var fullPlayList = player.playlistCollection.newPlaylist("full");
+            foreach (var s in curSongs)
+                fullPlayList.appendItem(player.newMedia(s.Trim('"')));
+            player.currentPlaylist = fullPlayList;
             //calling gridupdate 
             gridUpdate(curPlayList);
         }
@@ -187,32 +217,53 @@ namespace Media_Player
                 dlg.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
 
                 //checking the result from the filedialog was ok then adding the mp3 path to the playlist file, finally calls gridupdate to add the new song to the songGrid
-                if (dlg.ShowDialog() == DialogResult.OK) 
+                if (dlg.ShowDialog() == DialogResult.OK)
                 {
                     string mp3Path = dlg.FileName;
                     System.IO.File.AppendAllText(curPlayList, mp3Path + Environment.NewLine);
                     gridUpdate(curPlayList);
                 }
             }
-            
+
         }
 
+
+        //plays the next item in the playlist depending on the play mode selected
         private void forwardButton_Click(object sender, EventArgs e)
         {
-            if(player.controls.isAvailable["next"])
-                player.controls.next();
+            //getting and checking the current playlist is valid
+            var curPlayList = player.currentPlaylist;
+            if (curPlayList == null || curPlayList.count == 0) return;
+
+            //getting the index # of the current item playing and then using it to figure out the next song depending on playmode
+            int current = getCurPlaylistInd();
+            int next = playMode.getNextInd(current, curPlayList.count);
+
+            //playing the next item
+            player.controls.currentItem = curPlayList.get_Item(next);
+            player.controls.play();
         }
 
+
+        //plays the previous item in the playlist depending on the play mode selected, uses the same setup as forwardButton_click but calls getPrevInd instead
         private void prevButton_Click(object sender, EventArgs e)
         {
-            if (player.controls.isAvailable["previous"])
-                player.controls.previous();
+            var curPlayList = player.currentPlaylist;
+            if (curPlayList == null || curPlayList.count == 0) return;
+            int current = getCurPlaylistInd();
+            int next = playMode.getPrevInd(current, curPlayList.count);
+            player.controls.currentItem = curPlayList.get_Item(next);
+            player.controls.play();
+           
         }
 
+
+        //sets up the volume scroll bar
         private void volBar_Scroll(object sender, EventArgs e)
         {
             player.settings.volume = volBar.Value;
         }
+
 
         //function that fires when something in songGrid is double clicked it will play the selected song stopping whatever was previously playing if anything
         private void songGrid_CellContentDoubleClick(object sender, DataGridViewCellEventArgs e)
@@ -227,6 +278,7 @@ namespace Media_Player
             player.controls.stop();
             player.controls.play();
         }
+
 
         //function for firing the context menu on songgrid right click
         private void songGrid_CellMouseDown(object sender, DataGridViewCellMouseEventArgs e)
@@ -298,6 +350,7 @@ namespace Media_Player
             }
         }
 
+
         //actionlistener for deleting songs from playlists
         private void deleteButton_Click(object sender, EventArgs e)
         {
@@ -347,5 +400,103 @@ namespace Media_Player
                 }
             }
         }
+
+
+        //load button action listener it functions exactly the same way as double clicking on a playlist
+        private void loadButton_Click(object sender, EventArgs e)
+        {
+            if (playlistBox.SelectedIndex < 0) return;
+
+            //getting the currently selected playlist
+            string curPlayList = addressList[playlistBox.SelectedIndex];
+            var curSongs = System.IO.File
+             .ReadAllLines(curPlayList)
+             .Where(l => !string.IsNullOrWhiteSpace(l))
+             .ToList();
+
+            //creates the windows media player playlist so that music can be played
+            var fullPlayList = player.playlistCollection.newPlaylist("full");
+            foreach (var s in curSongs)
+                fullPlayList.appendItem(player.newMedia(s.Trim('"')));
+            player.currentPlaylist = fullPlayList;
+            //calling gridupdate 
+            gridUpdate(curPlayList);
+        }
+
+
+        //function used to identify the currently playing song in the windows playlist
+        private int getCurPlaylistInd()
+        {
+            //getting the currently playing item and returning if nothing is playing
+            var curr = player.controls.currentItem;
+            if (curr == null) return 0;
+
+            //getting the current playlist to be looped through to find the current item
+            var curPlayList = player.currentPlaylist;
+            for (int i = 0; i < curPlayList.count; i++)
+            {
+                if (curPlayList.get_Item(i).sourceURL
+                     .Equals(curr.sourceURL, StringComparison.OrdinalIgnoreCase))
+                    return i;
+            }
+            return 0;
+        }
+
+
+        //function that will fire when the selected index in combo box changes
+        private void CmbMode_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            //read the current combo box select
+            var modeName = cmbMode.SelectedItem as string;
+            
+            //switch statement to change the play back mode default is sequential
+            switch (modeName)
+            {
+                case "Repeat One":
+                    playMode = new RepeatOneMode();
+                    break;
+
+                default:  
+                    playMode = new SequentialMode();
+                    break;
+            }
+        }
     }
+
+
+    //an interface that can be implemented to create new playback modes
+    public interface IPlaybackMode
+    {
+        int getNextInd(int curInd, int count);
+        int getPrevInd(int curInd, int count);
+    }
+
+    //this mode just plays through the playlist then goes back 
+    public class SequentialMode : IPlaybackMode
+    {
+        public int getNextInd(int curInd, int count)
+        {
+            return (curInd + 1) % count;
+        }
+
+        public int getPrevInd(int curInd, int count)
+        {
+            return (curInd - 1 + count) % count;
+        }
+    }
+
+    //this mode repeats the same song
+    public class RepeatOneMode : IPlaybackMode
+    {
+        public int getNextInd(int curInd, int count)
+        {
+            return curInd;
+        }
+
+        public int getPrevInd(int curInd, int count)
+        {
+            return curInd;
+        }
+    }
+
 }
